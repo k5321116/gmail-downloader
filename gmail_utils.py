@@ -21,20 +21,37 @@ class GmailClient:
         
         return build('gmail', 'v1', credentials=creds)
 
-    def list_messages(self, max_results=5):
+    def list_messages(self):
         """最新のメッセージIDリストを取得"""
-        results = self.service.users().messages().list(userId='me', maxResults=max_results).execute()
+        results = self.service.users().messages().list(userId='me', maxResults=50).execute()
         messages = results.get('messages', [])
         return [msg['id'] for msg in messages]
     
-    def get_messages_summary(self, max_results=5):
-        """メッセージの概要を取得し、pandasのDataFrameで返す"""
-        msg_ids = self.list_messages(max_results=max_results)
+    def get_messages_summary(self, after_date=None, before_date=None):
+
+        query_parts = []
+        if after_date:
+            query_parts.append(f"after:{after_date}")
+        if before_date:
+            query_parts.append(f"before:{before_date}")
+        
+        query_parts.append("has:attachment")
+        query = " ".join(query_parts)
+        print(f"  [検索クエリ] {query}")
+
+        msg_ids = self.list_messages()
         self.summary_data = []
 
         for mid in msg_ids:
             # メッセージ詳細を取得
             message = self.service.users().messages().get(userId='me', id=mid, format='full').execute()
+            
+            parts = message['payload'].get('parts', [])
+            attachment_names = [p.get('filename') for p in parts if p.get('filename')]
+            
+            # 添付ファイルがない場合はスキップ（念のための二重チェック）
+            if not attachment_names:
+                continue
             
             # ヘッダーから情報を抽出
             headers = message['payload'].get('headers', [])
