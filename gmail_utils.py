@@ -37,7 +37,6 @@ class GmailClient:
         
         query_parts.append("has:attachment")
         query = " ".join(query_parts)
-        print(f"  [検索クエリ] {query}")
 
         msg_ids = self.list_messages()
         self.summary_data = []
@@ -61,9 +60,9 @@ class GmailClient:
 
             # 添付ファイルの有無と拡張子をチェック
             parts = message['payload'].get('parts', [])
-            attachment = [p.get('filename') for p in parts if p.get('filename')]
-            self.attachment_names = [os.path.splitext(f)[0].upper() for f in attachment]
-            self.extensions = [os.path.splitext(f)[1].lower() for f in attachment]
+            self.attachment = [p.get('filename') for p in parts if p.get('filename')]
+            self.attachment_names = [os.path.splitext(f)[0].upper() for f in self.attachment]
+            self.extensions = [os.path.splitext(f)[1].lower() for f in self.attachment]
 
             # 1件分のデータを辞書にまとめる
             self.summary_data.append({
@@ -71,9 +70,10 @@ class GmailClient:
                 '日付': date,
                 '差出人': sender,
                 '件名': subject,
-                '添付ファイル数': len(attachment),
+                '添付ファイル数': len(self.attachment),
                 'ファイル名': ", ".join(self.attachment_names),
                 '形式': ", ".join(set(self.extensions)),
+                "添付ファイル名":self.attachment,
                 'raw_data': message
             })
 
@@ -81,7 +81,7 @@ class GmailClient:
         df = pd.DataFrame(self.summary_data)
         return df
 
-    def download_attachments(self, message_id, save_dir='.'):
+    def download_attachments(self, message_id, save_dir='downloads', target_filenames=None):
         """添付ファイルをダウンロードして保存"""
         msg_data = next((item for item in self.summary_data if item['ID'] == message_id), None)
         if not msg_data:
@@ -96,6 +96,8 @@ class GmailClient:
 
         for part in parts:
             filename = part.get('filename')
+            if not filename:
+                continue
             body = part.get('body', {})
             
             if filename and 'attachmentId' in body:
@@ -104,9 +106,10 @@ class GmailClient:
                 ext = ext.lower()
                 sub_dir = ext.replace('.', '') if ext else 'others'
                 target_dir = os.path.join(save_dir, sub_dir)
-
                 if not os.path.exists(target_dir):
                     os.makedirs(target_dir)
+                if target_filenames is not None and filename not in target_filenames:
+                    continue
                 print(f"  [保存] {filename} -> {sub_dir} フォルダ")
                 '''
                 file_path = os.path.join(target_dir, filename)
