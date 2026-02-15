@@ -51,6 +51,15 @@ class GmailClient:
             
             if filename and 'attachmentId' in body:
                 print(f"  ... {filename} をダウンロード中 ...")
+                _, ext = os.path.splitext(filename)
+                ext = ext.lower()
+                sub_dir = ext.replace('.', '') if ext else 'others'
+                target_dir = os.path.join(save_dir, sub_dir)
+
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir)
+                print(f"  [保存] {filename} -> {sub_dir} フォルダ")
+
                 '''
                 attachment = self.service.users().messages().attachments().get(
                     userId='me',
@@ -59,12 +68,12 @@ class GmailClient:
                 ).execute()
 
                 file_data = base64.urlsafe_b64decode(attachment['data'])
-                file_path = os.path.join(save_dir, filename)
+                file_path = os.path.join(target_dir, filename)
 
                 with open(file_path, 'wb') as f:
                     f.write(file_data)
                 '''
-                found_files.append(filename)
+                found_files.append(f"{sub_dir}/{filename}")
                 
         if found_files:
             print(f"  [OK] 保存完了: {', '.join(found_files)}")
