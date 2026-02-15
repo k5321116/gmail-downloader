@@ -1,0 +1,14 @@
+# Pythonのキャッシュファイル
+__pycache__/
+*.py[cod]
+
+# 仮想環境
+venv/
+.env
+
+# Google API 認証情報（これらは手動で管理）
+token.pickle
+credentials.json
+
+# 実行時に生成されるデータ
+downloads/
