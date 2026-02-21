@@ -1,18 +1,17 @@
+import os
 import pickle
 import base64
-import os
 import pandas as pd
+from datetime import datetime
 from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
 
-class GmailClient:
-    def __init__(self, token_path='token.pickle', debug=False):
-        self.debug = debug
+class GmailAuthentication:
+    def __init__(self, token_path='token.pickle'):
         self.token_path = token_path
         self.service = self._authenticate()
 
     def _authenticate(self):
-        """認証を行い、Gmail APIサービスを構築する内部メソッド"""
+
         if not os.path.exists(self.token_path):
             raise FileNotFoundError(f"{self.token_path} が見つかりません。先に認証を完了させてください。")
         
@@ -21,119 +20,142 @@ class GmailClient:
         
         return build('gmail', 'v1', credentials=creds)
 
-    def list_messages(self):
-        """最新のメッセージIDリストを取得"""
-        results = self.service.users().messages().list(userId='me', maxResults=50).execute()
-        messages = results.get('messages', [])
-        return [msg['id'] for msg in messages]
-    
-    def get_messages_summary(self, after_date=None, before_date=None):
+class GetMessageDetail:
+    def __init__(self, auth_service):
+        self.service = auth_service
 
-        query_parts = []
-        if after_date:
-            query_parts.append(f"after:{after_date}")
-        if before_date:
-            query_parts.append(f"before:{before_date}")
-        
-        query_parts.append("has:attachment")
-        query = " ".join(query_parts)
-
-        msg_ids = self.list_messages()
-        self.summary_data = []
-
-        for mid in msg_ids:
-            # メッセージ詳細を取得
-            message = self.service.users().messages().get(userId='me', id=mid, format='full').execute()
+    def validate_dates(self, date_from, date_to):
+        try:
+            # 1. 形式チェック (YYYY/MM/DD)
+            start = datetime.strptime(date_from, "%Y/%m/%d")
+            end = datetime.strptime(date_to, "%Y/%m/%d")
             
-            parts = message['payload'].get('parts', [])
-            attachment_names = [p.get('filename') for p in parts if p.get('filename')]
-            
-            # 添付ファイルがない場合はスキップ（念のための二重チェック）
-            if not attachment_names:
-                continue
-            
-            # ヘッダーから情報を抽出
-            headers = message['payload'].get('headers', [])
-            subject = next((h['value'] for h in headers if h['name'].lower() == 'subject'), "（件名なし）")
-            date = next((h['value'] for h in headers if h['name'].lower() == 'date'), "（日付不明）")
-            sender = next((h['value'] for h in headers if h['name'].lower() == 'from'), "（差出人不明）")
-
-            # 添付ファイルの有無と拡張子をチェック
-            parts = message['payload'].get('parts', [])
-            self.attachment = [p.get('filename') for p in parts if p.get('filename')]
-            self.attachment_names = [os.path.splitext(f)[0].upper() for f in self.attachment]
-            self.extensions = [os.path.splitext(f)[1].lower() for f in self.attachment]
-
-            # 1件分のデータを辞書にまとめる
-            self.summary_data.append({
-                'ID': mid,
-                '日付': date,
-                '差出人': sender,
-                '件名': subject,
-                '添付ファイル数': len(self.attachment),
-                'ファイル名': ", ".join(self.attachment_names),
-                '形式': ", ".join(set(self.extensions)),
-                "添付ファイル名":self.attachment,
-                'raw_data': message
-            })
-
-        # DataFrameに変換
-        df = pd.DataFrame(self.summary_data)
-        return df
-
-    def download_attachments(self, message_id, save_dir='downloads', target_filenames=None):
-        """添付ファイルをダウンロードして保存"""
-        msg_data = next((item for item in self.summary_data if item['ID'] == message_id), None)
-        if not msg_data:
-            print("データが見つかりません。先に get_messages_summary を実行してください。")
-            return []
-        parts = msg_data['raw_data']['payload'].get('parts', [])
-        found_files = []
-
-        # 保存先ディレクトリがなければ作成
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-
-        for part in parts:
-            filename = part.get('filename')
-            if not filename:
-                continue
-            body = part.get('body', {})
-            
-            if filename and 'attachmentId' in body:
-                print(f"  ... {filename} をダウンロード中 ...")
-                _, ext = os.path.splitext(filename)
-                ext = ext.lower()
-                sub_dir = ext.replace('.', '') if ext else 'others'
-                target_dir = os.path.join(save_dir, sub_dir)
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir)
-                if target_filenames is not None and filename not in target_filenames:
-                    continue
-                print(f"  [保存] {filename} -> {sub_dir} フォルダ")
-                '''
-                file_path = os.path.join(target_dir, filename)
-                if os.path.exists(file_path):
-                    print(f"  [SKIP] {filename} は既に存在します")
-                    found_files.append(f"{sub_dir}/{filename}")
-                    continue
-                attachment = self.service.users().messages().attachments().get(
-                    userId='me',
-                    messageId=message_id,
-                    id=body['attachmentId']
-                ).execute()
-
-                file_data = base64.urlsafe_b64decode(attachment['data'])
-                file_path = os.path.join(target_dir, filename)
-
-                with open(file_path, 'wb') as f:
-                    f.write(file_data)
-                '''
-                found_files.append(f"{sub_dir}/{filename}")
+            # 2. 前後関係チェック
+            if start > end:
+                print("開始日が終了日より後の日付になっています。")
+                return False
                 
-        if found_files:
-            print(f"  [OK] 保存完了: {', '.join(found_files)}")
-        else:
-            print("  [-] 添付ファイルはありません。")
+            # 3. 未来チェック
+            if start > datetime.now() or end > datetime.now():
+                print("未来の日付は指定できません。")
+                return False
+
+            print('OK')    
+            return True
+            
+        except ValueError:
+            print("日付は YYYY/MM/DD の形式で入力してください。")
+            return False
+    
+    def get_message_id(self, DateFrom, DateTo):
+
+        query = ""
+        if DateFrom != None and DateFrom != "":
+            query += "After:" + DateFrom + " "
+        if DateTo != None and DateTo != "":
+            query += "Before:" + DateTo + " "
         
-        return found_files
+        query += "has:attachment"
+
+        results = self.service.users().messages().list(userId="me", maxResults=30, q=query).execute()
+        messages = results.get("messages", [])
+
+        message_id = []
+        for msg in messages:
+            message_id.append(msg['id'])
+
+        return message_id
+    
+    def get_messagelist(self, DateFrom, DateTo):
+
+        messagelist = []
+        d_message = {}
+        msg_id = self.get_message_id(DateFrom, DateTo)
+        
+        for i in range(len(msg_id)):
+            d_message = {
+                'ID': msg_id[i],
+                'Attachments': []}
+            
+            message = self.service.users().messages().get(userId='me', id=msg_id[i], format='full').execute()
+
+            #日付、差出人、件名を取得
+            for haeder in message["payload"]["headers"]:
+                if ('name', 'Date') in haeder.items():
+                    d_message['Date'] = haeder['value']
+                elif ('name', 'From') in haeder.items():
+                    d_message['From'] = haeder['value']
+                elif ('name', 'Subject') in haeder.items():
+                    d_message['Subject'] = haeder['value']
+            
+            #添付ファイルの名前とIDを取得
+            parts = message['payload'].get('parts', [])
+            for part in parts:
+                filename = part.get('filename')
+                if filename:
+                    body = part.get('body', {})
+                    attachment_data = {
+                        'filename': filename,
+                        'attachmentId': body.get('attachmentId')
+                    }
+                    d_message['Attachments'].append(attachment_data)
+
+            messagelist.append(d_message)
+        return messagelist
+    
+    def get_messagelist_as_df(self, DateFrom, DateTo):
+        messagelist = self.get_messagelist(DateFrom, DateTo)
+        df = pd.DataFrame(messagelist)
+        return df 
+
+class AttachmentsDownloader:
+
+    def __init__(self, auth_service, base_dir='downloads'):
+        self.service = auth_service
+        self.base_dir = base_dir
+
+    def download_attachments(self, message_id, attachment_id, filename):
+        if not os.path.exists(self.base_dir):
+            os.makedirs(self.base_dir)       
+        attachment = self.service.users().messages().attachments().get(
+            userId='me',
+            messageId=message_id,
+            id=attachment_id
+        ).execute()
+
+        file_data = base64.urlsafe_b64decode(attachment['data'])
+        file_path = os.path.join(self.base_dir, filename)
+
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+
+
+def main():
+    auth = GmailAuthentication()
+    detail = GetMessageDetail(auth.service)
+
+    print("検索期間を指定してください（例: 2026/02/15）")
+    date_from = input("開始日 (YYYY/MM/DD): ")
+    date_to = input("終了日 (YYYY/MM/DD): ")
+    
+    if not detail.validate_dates(date_from,date_to):
+        print('処理を中断しました')
+        return
+    
+    df = detail.get_messagelist_as_df(date_from, date_to)
+
+    if df.empty:
+        print("該当するメールが見つかりませんでした。")
+    test = AttachmentsDownloader(auth.service)
+    
+    for index, row in df.iterrows():
+        message_id = row['ID']
+        attachment_list = row['Attachments']
+        for attach in attachment_list:
+            attachment_id = attach['attachmentId']
+            filename = attach['filename']
+            test.download_attachments(message_id, attachment_id, filename)
+    print('処理が完了しました。')
+
+if __name__ == '__main__':
+    main()
