@@ -129,7 +129,18 @@ class AttachmentsDownloader:
         with open(file_path, 'wb') as f:
             f.write(file_data)
 
-
+    def download_all_from_df(self, df):
+        if df.empty:
+            print("ダウンロードするファイルがありません。")
+            return
+        
+        for index, row in df.iterrows():
+            message_id = row['ID']
+            attachment_list = row['Attachments']
+            for attach in attachment_list:
+                attachment_id = attach['attachmentId']
+                filename = attach['filename']
+                self.download_attachments(message_id, attachment_id, filename)
 def main():
     auth = GmailAuthentication()
     detail = GetMessageDetail(auth.service)
@@ -144,17 +155,8 @@ def main():
     
     df = detail.get_messagelist_as_df(date_from, date_to)
 
-    if df.empty:
-        print("該当するメールが見つかりませんでした。")
     test = AttachmentsDownloader(auth.service)
-    
-    for index, row in df.iterrows():
-        message_id = row['ID']
-        attachment_list = row['Attachments']
-        for attach in attachment_list:
-            attachment_id = attach['attachmentId']
-            filename = attach['filename']
-            test.download_attachments(message_id, attachment_id, filename)
+    test.download_all_from_df(df)
     print('処理が完了しました。')
 
 if __name__ == '__main__':
