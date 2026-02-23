@@ -10,8 +10,11 @@ class UIConstants:
     SEARCH_RESULT_TITLE = "検索結果"
 
     DATE_FORMAT = "YYYY/MM/DD"
-    DEFAULT_START_DATE = "2023/01/01"
-    DEFAULT_END_DATE = "2023/12/31"
+    DEFAULT_START_DATE = "2026/02/15"
+    DEFAULT_END_DATE = "2026/02/16"
+
+    TABLE_HEADERS = ["日付", "件名", "添付ファイル名"]
+    SUBJECT_MAX_LENGTH = 20
 
 class AppState:
     None

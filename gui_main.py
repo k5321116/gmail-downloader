@@ -9,8 +9,8 @@ def get_data_table_columns(header):
 def main(page: ft.Page):
     page.title = "Gmail Attachment Downloader"
     page.theme_mode = ft.ThemeMode.SYSTEM
-    after_input = ft.TextField(label="開始日(yyyy/mm/dd)", value="2026/02/10", text_align=ft.TextAlign.CENTER, width=150)
-    before_input = ft.TextField(label="終了日(yyyy/mm/dd)", value="2026/02/16", text_align=ft.TextAlign.CENTER, width=150)
+    after_input = ft.TextField(label="開始日(yyyy/mm/dd)", value="2018-02-10", text_align=ft.TextAlign.CENTER, width=150)
+    before_input = ft.TextField(label="終了日(yyyy/mm/dd)", value="2018-01-13", text_align=ft.TextAlign.CENTER, width=150)
     client = GmailClient()
     selected_ids = set()
     selected_files = set()

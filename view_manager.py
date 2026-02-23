@@ -4,12 +4,13 @@ from constants import UIConstants, Routes
 
 class ViewManager:
 
-    def __init__(self, page):
+    def __init__(self, page, ui_components, event_handlers):
         self.page = page
-        self.ui = UIComponents()
+        self.ui = ui_components
+        self.event_handlers = event_handlers
 
     def create_home_view(self):
-
+        self.ui.create_search_button(on_click=self.event_handlers.on_search_click)
         return ft.View(
                 route=Routes.Home,
                     controls =[
@@ -23,6 +24,29 @@ class ViewManager:
             )
         
 
+    def create_result_view(self, scrollable_table):
+        download_btn = self.ui.create_download_button(on_click=None)
+        return ft.View(
+                route=Routes.Result,
+                controls=[
+                    ft.Column([
+                        ft.AppBar(
+                            title=ft.Text(UIConstants.SEARCH_RESULT_TITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                            leading=ft.IconButton(
+                                icon=ft.Icons.ARROW_BACK,
+                                on_click=self.event_handlers.on_back_click
+                            ),
+                        ),
+                        ft.Divider(),
+                        scrollable_table
+                    ], expand=True),
+                    ft.Row(
+                        controls=[download_btn]
+                    )
+                ],
+            )
+    
     def _create_header(self):
         return ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
