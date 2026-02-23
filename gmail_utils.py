@@ -141,23 +141,27 @@ class AttachmentsDownloader:
                 attachment_id = attach['attachmentId']
                 filename = attach['filename']
                 self.download_attachments(message_id, attachment_id, filename)
-def main():
-    auth = GmailAuthentication()
-    detail = GetMessageDetail(auth.service)
+            
+class GmailClient:
+    def __init__(self, auth_service):
+        self.auth_service = auth_service
+        self.detail = GetMessageDetail(auth_service)
+        self.downloader = AttachmentsDownloader(auth_service)
+        
+    def main(self):
+  
+        print("検索期間を指定してください（例: 2026/02/15）")
+        date_from = input("開始日 (YYYY/MM/DD): ")
+        date_to = input("終了日 (YYYY/MM/DD): ")
+        
+        if not self.detail.validate_dates(date_from,date_to):
+            print('処理を中断しました')
+            return
+        
+        df = self.detail.get_messagelist_as_df(date_from, date_to)
 
-    print("検索期間を指定してください（例: 2026/02/15）")
-    date_from = input("開始日 (YYYY/MM/DD): ")
-    date_to = input("終了日 (YYYY/MM/DD): ")
-    
-    if not detail.validate_dates(date_from,date_to):
-        print('処理を中断しました')
-        return
-    
-    df = detail.get_messagelist_as_df(date_from, date_to)
-
-    test = AttachmentsDownloader(auth.service)
-    test.download_all_from_df(df)
-    print('処理が完了しました。')
+        self.downloader.download_all_from_df(df)
+        print('処理が完了しました。')
 
 if __name__ == '__main__':
-    main()
+    GmailClient.main()
