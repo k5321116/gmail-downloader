@@ -25,11 +25,10 @@ class ViewManager:
 
     def create_result_view(self, scrollable_table):
         current_count = self.event_handlers.state.get_download_count()
-        if self.ui.download_btn:
-            download_btn = self.ui.download_btn
-            self.ui.update_download_button_text(current_count) # 最新の状態に更新
-        else:
-            download_btn = self.ui.create_download_button(current_count, on_click=self.event_handlers.on_download_click)
+        download_btn = self.ui.create_download_button(
+            count=current_count,
+            on_click=self.event_handlers.on_download_click
+        )
         return ft.View(
                 route=Routes.Result,
                 controls=[

@@ -19,8 +19,8 @@ class UIConstants:
 
     NO_FILE_SELECTED = "ファイルを選択してください"
     DOWNLOAD_COMPLETE = "ダウンロード完了！"
-    
-    TABLE_HEADERS = ["日付", "件名", "添付ファイル"]
+
+    TABLE_HEADERS = ["選択", "日付", "件名", "添付ファイル"]
     SUBJECT_MAX_LENGTH = 20
 
 @dataclass

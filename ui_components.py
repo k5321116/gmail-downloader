@@ -47,7 +47,7 @@ class UIComponents:
             on_click=on_click,
             bgcolor=ft.Colors.BLUE_700,
             color=ft.Colors.WHITE,
-            disabled=True if count == 0 else False
+            disabled=(count == 0)
         )
         return self.download_btn
 
@@ -59,7 +59,7 @@ class UIComponents:
             rows=[],
             data_row_min_height=40,
             data_row_max_height=120,
-            show_checkbox_column=True
+            show_checkbox_column=False
         )
     
     def create_scrollable_table(self):
@@ -72,11 +72,12 @@ class UIComponents:
     
     def update_download_button_text(self, count: int):
         """ダウンロードボタンのテキストを更新"""
-        print(f"Debug: ボタンの更新命令を受け取りました。現在のカウント={count}")
         if self.download_btn:
+            print(f"Debug: ボタンの更新命令を受け取りました。現在のカウント={count}")
             self.download_btn.text = f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}"
             self.download_btn.disabled = (count == 0)
-            self.download_btn.update()
+            if self.download_btn.page:
+                self.download_btn.update()
             
     def create_file_checkbox(self, filename: str, on_change) -> ft.Checkbox:
         """ファイル選択用チェックボックスを作成"""
