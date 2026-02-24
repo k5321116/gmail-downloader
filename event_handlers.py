@@ -29,6 +29,7 @@ class EventHandlers:
                 self._create_table_row(row)
 
                 self.page.go(Routes.Result)
+                self._update_ui()
         self.ui.search_btn.disabled = False
         self.page.update()
 
@@ -84,18 +85,24 @@ class EventHandlers:
         self.state.checkbox_map[message_id] = checkbox_list
         file_checkboxes_container = self.ui.create_file_checkboxes_container(checkbox_list)
         
-        # 行を追加
+        row_checkbox = ft.Checkbox(
+            value=False,
+            on_change=lambda e, rid=message_id: self.on_row_checkbox_change(e, rid)
+        )
+
         self.ui.data_table.rows.append(
             ft.DataRow(
-                selected=False,
-                on_select_change=lambda e, rid=message_id: self.on_row_select(e, rid),
                 cells=[
+                    ft.DataCell(content=row_checkbox),  # 行選択用チェックボックス
                     ft.DataCell(ft.Text(row["Date"])),
                     ft.DataCell(ft.Text(row["Subject"][:UIConstants.SUBJECT_MAX_LENGTH])),
                     ft.DataCell(content=file_checkboxes_container),
                 ],
             )
         )
+        
+        # 行のチェックボックスもマップに保存（後で同期に使う）
+        self.state.checkbox_map[f"{message_id}_row"] = row_checkbox
 
     def on_file_check(self, e, message_id: str, attach_id: str, filename: str):
         """個別ファイルのチェックボックス変更時の処理"""
@@ -103,17 +110,26 @@ class EventHandlers:
             self.state.add_file(message_id, attach_id, filename)
         else:
             self.state.remove_file(message_id, attach_id, filename)
+
+        self._update_row_checkbox(message_id)
         
         self._update_ui(e.control)
 
-    def on_row_select(self, e, message_id: str):
-        """行選択時の処理（メール全体の選択/解除）"""
-        current_row = next((r for r in self.ui.data_table.rows if r.cells[0].content.value == message_id), None)
-        if not current_row:
+    def _update_row_checkbox(self, message_id: str):
+        row_checkbox_key = f"{message_id}_row"
+        if row_checkbox_key not in self.state.checkbox_map:
             return
         
-        is_selected = e.data == "true"
-        current_row.selected = is_selected
+        row_checkbox = self.state.checkbox_map[row_checkbox_key]
+
+        if message_id in self.state.checkbox_map:
+            all_checked = all(cb.value for cb in self.state.checkbox_map[message_id])
+            any_checked = any(cb.value for cb in self.state.checkbox_map[message_id])
+            row_checkbox.value = all_checked
+            row_checkbox.update()
+
+    def on_row_checkbox_change(self, e, message_id: str):
+        is_selected = e.control.value
         
         if message_id in self.state.checkbox_map:
             for checkbox in self.state.checkbox_map[message_id]:
@@ -136,7 +152,8 @@ class EventHandlers:
         self.ui.update_download_button_text(count)
         if control:
             control.update()
-        self.page.update()
+        if self.page:
+            self.page.update()
 
     def _show_snackbar(self, message: str):
         """スナックバーを表示"""
