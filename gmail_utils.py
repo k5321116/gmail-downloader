@@ -143,25 +143,28 @@ class AttachmentsDownloader:
                 self.download_attachments(message_id, attachment_id, filename)
             
 class GmailClient:
-    def __init__(self, auth_service):
-        self.auth_service = auth_service
-        self.detail = GetMessageDetail(auth_service)
-        self.downloader = AttachmentsDownloader(auth_service)
-        
-    def main(self):
-  
-        print("検索期間を指定してください（例: 2026/02/15）")
-        date_from = input("開始日 (YYYY/MM/DD): ")
-        date_to = input("終了日 (YYYY/MM/DD): ")
-        
-        if not self.detail.validate_dates(date_from,date_to):
-            print('処理を中断しました')
-            return
-        
-        df = self.detail.get_messagelist_as_df(date_from, date_to)
+    def __init__(self):
+        self.auth = GmailAuthentication()
+        self.auth_service = self.auth.service
+        self.detail = GetMessageDetail(self.auth_service)
+        self.downloader = AttachmentsDownloader(self.auth_service)
+        self.current_df = pd.DataFrame()
 
-        self.downloader.download_all_from_df(df)
-        print('処理が完了しました。')
+    def search_attachments(self, date_from, date_to):
+        """GUIの検索ボタンから呼ばれる関数"""
+        # 日付のバリデーション（既存のロジックを活用）
+        if not self.detail.validate_dates(date_from, date_to):
+            return None
+        
+        # 検索実行
+        self.current_df = self.detail.get_messagelist_as_df(date_from, date_to)
+        return self.current_df
 
-if __name__ == '__main__':
-    GmailClient.main()
+    def download_all(self):
+        """GUIのダウンロードボタンから呼ばれる関数"""
+        if self.current_df.empty:
+            return False
+        
+        # 保持している検索結果(current_df)を使ってダウンロード
+        self.downloader.download_all_from_df(self.current_df)
+        return True
