@@ -34,17 +34,23 @@ class UIComponents:
         )
         return self.search_btn
     
-    def create_download_button(self, on_click) -> ft.ElevatedButton:
+    def create_download_button(self, count, on_click) -> ft.ElevatedButton:
         """ダウンロードボタンを作成"""
+        if self.download_btn is not None:
+            self.download_btn.text = f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}"
+            self.download_btn.disabled = True if count == 0 else False
+            return self.download_btn
+        
         self.download_btn = ft.ElevatedButton(
-            UIConstants.DOWNLOAD_BTN_TEXT,
+            f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}",
             icon=ft.Icons.FILE_DOWNLOAD,
             on_click=on_click,
             bgcolor=ft.Colors.BLUE_700,
-            color=ft.Colors.WHITE
+            color=ft.Colors.WHITE,
+            disabled=True if count == 0 else False
         )
         return self.download_btn
-    
+
     def _create_data_table(self) -> ft.DataTable:
         """データテーブルを作成"""
         columns = [ft.DataColumn(ft.Text(header)) for header in UIConstants.TABLE_HEADERS]
@@ -62,4 +68,28 @@ class UIComponents:
             controls=[self.data_table],
             scroll=ft.ScrollMode.ALWAYS,
             expand=True
+        )
+    
+    def update_download_button_text(self, count: int):
+        """ダウンロードボタンのテキストを更新"""
+        print(f"Debug: ボタンの更新命令を受け取りました。現在のカウント={count}")
+        if self.download_btn:
+            self.download_btn.text = f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}"
+            self.download_btn.disabled = (count == 0)
+            self.download_btn.update()
+            
+    def create_file_checkbox(self, filename: str, on_change) -> ft.Checkbox:
+        """ファイル選択用チェックボックスを作成"""
+        return ft.Checkbox(
+            label=filename,
+            value=False,
+            on_change=on_change
+        )
+    
+    def create_file_checkboxes_container(self, checkboxes: list) -> ft.Column:
+        """チェックボックスのコンテナを作成"""
+        return ft.Column(
+            controls=checkboxes,
+            spacing=0,
+            scroll=ft.ScrollMode.AUTO
         )
