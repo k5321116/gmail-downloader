@@ -1,4 +1,5 @@
 import flet as ft
+import asyncio
 from constants import UIConstants, Routes
 
 class ViewManager:
@@ -45,11 +46,62 @@ class ViewManager:
                         scrollable_table
                     ], expand=True),
                     ft.Row(
+                            alignment=ft.MainAxisAlignment.CENTER,
                         controls=[download_btn]
                     )
                 ],
             )
     
+    def create_confirm_view(self, count):
+        # AppState から選択されたファイル名のみを抽出
+        selected_files = self.event_handlers.state.selected_files
+        file_names = [ft.Text(f"・{f[2]}", size=14) for f in selected_files] # f[2] が filename
+        return ft.View(
+            route=Routes.Confirm,
+            scroll=ft.ScrollMode.AUTO, # ファイルが多い場合にスクロール可能にする
+            controls=[
+                ft.Column([
+                    ft.Text("以下のファイルをダウンロードしますか？", size=20, weight=ft.FontWeight.BOLD),
+                    ft.Container(
+                        content=ft.Column(file_names, spacing=5),
+                        padding=20,
+                        border_radius=10,
+                        height = 200,
+                    ),
+                    ft.Text(f"合計: {count} 件", size=16),
+                    ft.Row([
+                        self.ui.folder_path_input,
+                        self.ui.create_folder_select_button(
+                            on_click=lambda _: (
+                                self.page.run_task(
+                                self._pick_directory)
+                            )
+                        ),
+                    ]),
+                    ft.Row([
+                        ft.ElevatedButton(
+                            UIConstants.CONFIRM_BTN_TEXT, 
+                            on_click=self.event_handlers.on_confirm_download
+                        ),
+                        ft.OutlinedButton(
+                            UIConstants.BACK_RESULT_BTN_TEXT, 
+                            on_click=self.event_handlers.on_cancel_download
+                        )
+                    ], alignment=ft.MainAxisAlignment.CENTER)
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20),
+            ],
+        )
+    
+    async def _pick_directory(self):
+        path = await self.ui.directory_picker.get_directory_path(
+            dialog_title=UIConstants.SELECT_FOLDER_TEXT
+        )
+        if path:
+            self.ui.folder_path_input.value = path
+            self.event_handlers.client.downloader.base_dir = path
+            self.ui.folder_path_input.update()
+            self.page.update()
+
     def _create_header(self):
         return ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,

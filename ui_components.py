@@ -14,6 +14,14 @@ class UIComponents:
         self.search_btn = None
         self.download_btn = None
         self.data_table = self._create_data_table()
+
+        self.directory_picker = ft.FilePicker()
+        self.folder_path_input = ft.TextField(
+            label="保存先フォルダ",
+            value=UIConstants.DEFAULT_SAVE_PATH,
+            read_only=True,
+            expand=True
+        )
     
     @staticmethod
     def _create_date_input(label: str, value: str) -> ft.TextField:
@@ -36,20 +44,23 @@ class UIComponents:
     
     def create_download_button(self, count, on_click) -> ft.ElevatedButton:
         """ダウンロードボタンを作成"""
-        if self.download_btn is not None:
-            self.download_btn.text = f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}"
-            self.download_btn.disabled = True if count == 0 else False
-            return self.download_btn
-        
         self.download_btn = ft.ElevatedButton(
-            f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}",
+            UIConstants.DOWNLOAD_BTN_TEXT,
             icon=ft.Icons.FILE_DOWNLOAD,
             on_click=on_click,
             bgcolor=ft.Colors.BLUE_700,
             color=ft.Colors.WHITE,
-            disabled=(count == 0)
         )
         return self.download_btn
+    
+    def create_folder_select_button(self, on_click):
+        self.folder_select_btn = ft.ElevatedButton(
+            UIConstants.SELECT_FOLDER_TEXT,
+            icon=ft.Icons.FOLDER_OPEN,
+            on_click=on_click,
+            disabled=False
+        )
+        return self.folder_select_btn
 
     def _create_data_table(self) -> ft.DataTable:
         """データテーブルを作成"""
@@ -69,15 +80,6 @@ class UIComponents:
             scroll=ft.ScrollMode.ALWAYS,
             expand=True
         )
-    
-    def update_download_button_text(self, count: int):
-        """ダウンロードボタンのテキストを更新"""
-        if self.download_btn:
-            print(f"Debug: ボタンの更新命令を受け取りました。現在のカウント={count}")
-            self.download_btn.text = f"{count}個のファイルを{UIConstants.DOWNLOAD_BTN_TEXT}"
-            self.download_btn.disabled = (count == 0)
-            if self.download_btn.page:
-                self.download_btn.update()
             
     def create_file_checkbox(self, filename: str, on_change) -> ft.Checkbox:
         """ファイル選択用チェックボックスを作成"""

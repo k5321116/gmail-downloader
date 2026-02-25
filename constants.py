@@ -5,13 +5,16 @@ from typing import Set, Tuple
 class Routes:
     Home = '/home'
     Result = '/result'
+    Confirm = '/confirm'
 
 class UIConstants:
     APP_TITLE = "Gmail Attachment Downloader"
     WELCOME_TEXT = "ようこそGmail Attachment Downloaderへ"
     SEARCH_BTN_TEXT = "検索開始"
-    DOWNLOAD_BTN_TEXT = "ダウンロード"
+    CONFIRM_BTN_TEXT = "はい"
+    DOWNLOAD_BTN_TEXT = "確認画面へ"
     SEARCH_RESULT_TITLE = "検索結果"
+    BACK_RESULT_BTN_TEXT = "検索結果に戻る"
 
     DATE_FORMAT = "YYYY/MM/DD"
     DEFAULT_START_DATE = "2026/02/15"
@@ -22,6 +25,9 @@ class UIConstants:
 
     TABLE_HEADERS = ["選択", "日付", "件名", "添付ファイル"]
     SUBJECT_MAX_LENGTH = 20
+
+    SELECT_FOLDER_TEXT = "保存フォルダを選択"
+    DEFAULT_SAVE_PATH = "downloads/"
 
 @dataclass
 class AppState:
