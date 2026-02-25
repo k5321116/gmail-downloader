@@ -1,8 +1,12 @@
 import flet as ft
 from constants import UIConstants
+from datetime import datetime
 class UIComponents:
 
     def __init__(self):
+        self.date_picker = ft.DatePicker(
+            first_date=datetime(2020, 1, 1),
+            last_date=datetime(2030, 12, 31))
         self.after_input = self._create_date_input(
             "開始日",
             UIConstants.DEFAULT_START_DATE
@@ -30,7 +34,17 @@ class UIComponents:
             label=f"{label}({UIConstants.DATE_FORMAT})",
             value=value,
             text_align=ft.TextAlign.CENTER,
-            width=150
+            width=150,
+        )
+    
+    def _create_datepicker_input(self, label, value, on_click):
+        return ft.TextField(
+            label=f"{label}({UIConstants.DATE_FORMAT})",
+            value=value,
+            on_click=on_click,
+            suffix_icon=ft.IconButton(ft.Icons.CALENDAR_MONTH,
+                                      on_click = None),
+            width=200,
         )
     
     def create_search_button(self, on_click) -> ft.ElevatedButton:

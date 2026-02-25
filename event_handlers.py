@@ -2,7 +2,7 @@ import flet as ft
 from collections import defaultdict
 from gmail_utils import GmailClient
 from constants import UIConstants, AppState, Routes
-
+from datetime import timezone, timedelta
 
 class EventHandlers:
     """イベントハンドラを管理するクラス"""
@@ -30,7 +30,23 @@ class EventHandlers:
                 self._update_ui()
         self.ui.search_btn.disabled = False
         self.page.update()
+    
+    def on_calendar_click(self, e, target_input):
+        self.ui.date_picker.data = target_input
+        self.page.dialog = self.ui.date_picker
+        self.page.dialog.open = True
+        self.page.update()
 
+    def on_date_change(self, e):
+        if e.control.value:
+            target_input = e.control.data
+            date_value = e.control.value
+            jst = timezone(timedelta(hours=9))
+            date_value_jst = date_value.astimezone(jst)
+            target_input.value = f"{date_value_jst.year}/{date_value_jst.month:02d}/{date_value_jst.day:02d}"
+            target_input.update()
+            self.ui.date_picker.open = False
+            self.page.update()
     def on_download_click(self, e):
         count = self.state.get_download_count()
         if count == 0:

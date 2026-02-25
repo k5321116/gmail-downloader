@@ -118,8 +118,16 @@ class ViewManager:
         return ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
             controls=[
-                self.ui.after_input,                       
-                self.ui.before_input, 
+                self.ui.after_input,
+            ft.IconButton(
+                icon=ft.Icons.CALENDAR_MONTH,
+                on_click=lambda e: self.event_handlers.on_calendar_click(e, self.ui.after_input)
+            ),
+            self.ui.before_input,
+            ft.IconButton(
+                icon=ft.Icons.CALENDAR_MONTH,
+                on_click=lambda e: self.event_handlers.on_calendar_click(e, self.ui.before_input)
+            ),
                 self.ui.search_btn
             ],
         )
