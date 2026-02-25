@@ -13,8 +13,13 @@ class GmailAttachmentDownloaderApp:
         self.ui = UIComponents()
         self.event_handlers = EventHandlers(self.page, self.ui)
         self.view_manager = ViewManager(self.page, self.ui, self.event_handlers)
-
         self._setup_routing()
+
+    async def run(self):
+        self.ui.directory_picker.on_result = self.event_handlers.on_directory_result
+        self.page.update()
+
+        await self.page.push_route(Routes.Home)
 
     def _setup_page(self):
         """ページの初期設定"""
@@ -37,6 +42,11 @@ class GmailAttachmentDownloaderApp:
             self.page.views.append(
                 self.view_manager.create_result_view(scrollable_table)
             )
+        elif self.page.route == Routes.Confirm:
+            count = self.event_handlers.state.get_download_count()
+            self.page.views.append(
+                self.view_manager.create_confirm_view(count)
+            )
         self.page.update()
     
     async def _on_view_pop(self, e):
@@ -45,9 +55,6 @@ class GmailAttachmentDownloaderApp:
             self.page.views.remove(e.view)
             top_view = self.page.views[-1]
             await self.page.push_route(top_view.route)
-
-    async def run(self):
-        await self.page.push_route(Routes.Home)
 
 def main(page: ft.Page):
     app = GmailAttachmentDownloaderApp(page)

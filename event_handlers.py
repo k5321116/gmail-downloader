@@ -17,8 +17,6 @@ class EventHandlers:
         """検索ボタンクリック時の処理"""
         self.ui.search_btn.disabled = True
         self.page.update()
-        
-        print(f"検索開始: {self.ui.after_input.value} から {self.ui.before_input.value}")
 
         df = self.client.search_attachments(self.ui.after_input.value, self.ui.before_input.value)
         if df is not None:
@@ -34,14 +32,14 @@ class EventHandlers:
         self.page.update()
 
     def on_download_click(self, e):
-        """ダウンロードボタンクリック時の処理"""
-        if not self.state.selected_files:
+        count = self.state.get_download_count()
+        if count == 0:
             self._show_snackbar(UIConstants.NO_FILE_SELECTED)
             return
-        
-        self.ui.download_btn.disabled = True
-        self.page.update()
+        self.page.go(Routes.Confirm)
 
+    def on_confirm_download(self, e):
+        """ダウンロードボタンクリック時の処理"""
         try:
             # 2. AppState に保存されたタプルを1つずつ取り出して実行
             for m_id, a_id, fname in self.state.selected_files:
@@ -60,6 +58,23 @@ class EventHandlers:
         finally:
             self.ui.download_btn.disabled = False
             self.page.update()
+            self._show_snackbar(UIConstants.DOWNLOAD_COMPLETE)
+            self.page.go(Routes.Home)
+
+    def on_directory_result(self, e: ft.FilePicker):
+        print(f"on_directory_result fired: {e.path}")  # ← 追加
+        
+        if e.path:
+            # 1. UI上のテキストを更新
+            self.ui.folder_path_input.value = e.path
+            self.ui.folder_path_input.update()
+            self.client.downloader.base_dir = e.path
+            
+            self._show_snackbar(f"保存先を確定: {e.path}")
+
+    def on_cancel_download(self, e):
+        """ダウンロードキャンセル時の処理"""
+        self.page.go(Routes.Result)
 
     def on_back_click(self, e):
         """戻るボタンクリック時の処理"""
@@ -149,7 +164,6 @@ class EventHandlers:
     def _update_ui(self, control=None):
         """UIを更新"""
         count = self.state.get_download_count()
-        self.ui.update_download_button_text(count)
         if control:
             control.update()
         if self.page:
