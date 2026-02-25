@@ -16,7 +16,10 @@ class GmailAttachmentDownloaderApp:
         self._setup_routing()
 
     async def run(self):
+        self.page.overlay.append(self.ui.date_picker)
         self.ui.directory_picker.on_result = self.event_handlers.on_directory_result
+        self.ui.date_picker.on_change = lambda e: self.event_handlers.on_date_change(e)
+
         self.page.update()
 
         await self.page.push_route(Routes.Home)
@@ -25,6 +28,10 @@ class GmailAttachmentDownloaderApp:
         """ページの初期設定"""
         self.page.title = UIConstants.APP_TITLE
         self.page.theme_mode = ft.ThemeMode.SYSTEM
+        self.page.locale_configuration = ft.LocaleConfiguration(
+        supported_locales=[ft.Locale("ja", "JP")],
+        current_locale=ft.Locale("ja", "JP")
+    )
 
     def _setup_routing(self):
         """ルーティングの設定"""

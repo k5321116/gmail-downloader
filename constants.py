@@ -19,6 +19,7 @@ class UIConstants:
     DATE_FORMAT = "YYYY/MM/DD"
     DEFAULT_START_DATE = "2026/02/15"
     DEFAULT_END_DATE = "2026/02/16"
+    DATE_PICKER_HELP_TEXT = "日付を選択してください"
 
     NO_FILE_SELECTED = "ファイルを選択してください"
     DOWNLOAD_COMPLETE = "ダウンロード完了！"
