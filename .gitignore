@@ -7,6 +7,7 @@ venv/
 .env
 
 # Google API 認証情報（これらは手動で管理）
+token.json
 token.pickle
 credentials.json
 
