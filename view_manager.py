@@ -30,10 +30,15 @@ class ViewManager:
             count=current_count,
             on_click=self.event_handlers.on_download_click
         )
+        select_all_row = self.ui.create_select_all_buttons(
+            on_select_all=self.event_handlers.on_select_all,
+            on_clear_all=self.event_handlers.on_clear_all
+        )
         return ft.View(
                 route=Routes.Result,
+                vertical_alignment=ft.MainAxisAlignment.START,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Column([
                         ft.AppBar(
                             title=ft.Text(UIConstants.SEARCH_RESULT_TITLE, color=ft.Colors.ON_SURFACE_VARIANT),
                             color=ft.Colors.ON_SURFACE_VARIANT,
@@ -43,11 +48,12 @@ class ViewManager:
                             ),
                         ),
                         ft.Divider(),
+                        ft.Column([
                         scrollable_table
                     ], expand=True),
                     ft.Row(
                             alignment=ft.MainAxisAlignment.CENTER,
-                        controls=[download_btn]
+                        controls=[select_all_row, download_btn]
                     )
                 ],
             )
@@ -90,6 +96,22 @@ class ViewManager:
                     ], alignment=ft.MainAxisAlignment.CENTER)
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20),
             ],
+        )
+    
+    def create_empty_view(self):
+        return ft.View(
+            route=Routes.Empty,
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Column([
+                    ft.Text("条件に一致するメールが見つかりませんでした。", size=20, text_align=ft.TextAlign.CENTER),
+                    ft.ElevatedButton(
+                        "ホームに戻る",
+                        on_click=lambda e: self.page.go(Routes.Home)
+                    )
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER, expand=True)
+            ]
         )
     
     async def _pick_directory(self):
