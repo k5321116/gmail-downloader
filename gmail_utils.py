@@ -57,7 +57,7 @@ class GetMessageDetail:
         
         query += "has:attachment"
 
-        results = self.service.users().messages().list(userId="me", maxResults=30, q=query).execute()
+        results = self.service.users().messages().list(userId="me", maxResults=100, q=query).execute()
         messages = results.get("messages", [])
 
         message_id = []

@@ -110,3 +110,13 @@ class UIComponents:
             spacing=0,
             scroll=ft.ScrollMode.AUTO
         )
+    
+    def create_select_all_buttons(self, on_select_all, on_clear_all):
+        """全選択・全解除ボタンの行を作成"""
+        return ft.Row(
+            [
+                ft.TextButton("すべて選択", icon=ft.Icons.SELECT_ALL, on_click=on_select_all),
+                ft.TextButton("選択解除", icon=ft.Icons.DESELECT, on_click=on_clear_all),
+            ],
+            alignment=ft.MainAxisAlignment.START,
+        )

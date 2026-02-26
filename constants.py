@@ -6,6 +6,7 @@ class Routes:
     Home = '/home'
     Result = '/result'
     Confirm = '/confirm'
+    Empty = '/empty'
 
 class UIConstants:
     APP_TITLE = "Gmail Attachment Downloader"

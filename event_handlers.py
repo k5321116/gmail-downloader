@@ -1,4 +1,5 @@
 import flet as ft
+import asyncio
 from collections import defaultdict
 from gmail_utils import GmailClient
 from constants import UIConstants, AppState, Routes
@@ -13,23 +14,53 @@ class EventHandlers:
         self.state = AppState()
         self.client = GmailClient()
 
-    def on_search_click(self, e):
+    async def on_search_click(self, e):
         """検索ボタンクリック時の処理"""
+        loading_dialog = ft.AlertDialog(
+            content=ft.Row(
+                [
+                    ft.ProgressRing(), 
+                    ft.Container(content=ft.Text("検索中..."), padding=ft.padding.only(left=10))
+                ],
+                tight=True,
+                alignment=ft.MainAxisAlignment.CENTER,
+            ),
+            modal=True, # ダイアログの外側をクリックしても閉じないようにする
+        )
+
+        # ダイアログを表示
+        self.page.dialog = loading_dialog
+        self.page.dialog.open = True
         self.ui.search_btn.disabled = True
         self.page.update()
 
-        df = self.client.search_attachments(self.ui.after_input.value, self.ui.before_input.value)
-        if df is not None:
-            self.state.clear_checkboxes()
-            self.ui.data_table.rows.clear()
+        try:
+            df = await asyncio.to_thread(
+                self.client.search_attachments,
+                self.ui.after_input.value, 
+                self.ui.before_input.value
+            )
 
-            for _, row in df.iterrows():
-                self._create_table_row(row)
+            self.page.dialog.open = False
+            self.page.update()
+
+            if df is not None and not df.empty:
+                self.state.clear_checkboxes()
+                self.ui.data_table.rows.clear()
+
+                for _, row in df.iterrows():
+                    self._create_table_row(row)
 
                 self.page.go(Routes.Result)
                 self._update_ui()
-        self.ui.search_btn.disabled = False
-        self.page.update()
+            else:
+                self.page.go(Routes.Empty)
+        except Exception as ex:
+            self.page.dialog.open = False
+
+        finally:
+            self.ui.search_btn.disabled = False
+            self.page.update()
     
     def on_calendar_click(self, e, target_input):
         self.ui.date_picker.data = target_input
@@ -108,7 +139,7 @@ class EventHandlers:
             aid = attachment['attachmentId']
             checkbox = self.ui.create_file_checkbox(
                 filename,
-                lambda e, m=message_id, a=aid, f=filename: self.on_file_check(e, m, a, f)
+                on_change=lambda e, m=message_id, a=aid, f=filename: self.on_file_check(e, m, a, f)
             )
             checkbox.data = aid
             checkbox_list.append(checkbox)
@@ -190,3 +221,38 @@ class EventHandlers:
         self.page.snack_bar = ft.SnackBar(ft.Text(message))
         self.page.snack_bar.open = True
         self.page.update()
+
+    def on_select_all(self, e):
+        """表示されているすべてのファイルを選択状態にする"""
+        for message_id, checkboxes in self.state.checkbox_map.items():
+            # '_row' で終わるキー（行全体のチェックボックス）はスキップ
+            if isinstance(message_id, str) and message_id.endswith("_row"):
+                checkboxes.value = True
+                checkboxes.update()
+                continue
+            
+            # 各ファイルのチェックボックスを更新
+            for cb in checkboxes:
+                cb.value = True
+                # AppStateへの追加処理 (message_id, attach_id, filename)
+                # cb.data には attach_id を入れている前提
+                self.state.add_file(message_id, cb.data, cb.label)
+                cb.update()
+        
+        self._update_ui()
+
+    def on_clear_all(self, e):
+        """すべての選択を解除する"""
+        for message_id, checkboxes in self.state.checkbox_map.items():
+            if isinstance(message_id, str) and message_id.endswith("_row"):
+                checkboxes.value = False
+                checkboxes.update()
+                continue
+
+            for cb in checkboxes:
+                cb.value = False
+                self.state.remove_file(message_id, cb.data, cb.label)
+                cb.update()
+        
+        self.state.selected_files.clear() # 集合を空にする
+        self._update_ui()

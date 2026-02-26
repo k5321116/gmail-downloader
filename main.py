@@ -54,6 +54,10 @@ class GmailAttachmentDownloaderApp:
             self.page.views.append(
                 self.view_manager.create_confirm_view(count)
             )
+        elif self.page.route == Routes.Empty:
+            self.page.views.append(
+                self.view_manager.create_empty_view()
+            )
         self.page.update()
     
     async def _on_view_pop(self, e):
@@ -68,4 +72,4 @@ def main(page: ft.Page):
     page.run_task(app.run)
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.run(main)
